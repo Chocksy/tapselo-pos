@@ -1,0 +1,53 @@
+name: Build USB Image
+
+on:
+  workflow_run:
+    workflows: ["Release Build"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  build-image:
+    runs-on: ubuntu-22.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - name: Checkout private repo (for build scripts)
+        uses: actions/checkout@v4
+        with:
+          repository: chocksy/pos
+          token: ${{ secrets.RELEASES_PAT }}
+
+      - name: Download latest .deb from releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p /tmp/pos-usb
+          gh release download --repo Chocksy/tapselo-pos --pattern '*amd64.deb' -D /tmp/pos-usb/
+          ls -la /tmp/pos-usb/*.deb
+
+      - name: Get version from release
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(gh release list --repo Chocksy/tapselo-pos --limit 1 --json tagName -q '.[0].tagName')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building USB image for $VERSION"
+
+      - name: Build USB image
+        run: |
+          DEB_FILE=$(ls /tmp/pos-usb/*amd64.deb | head -1)
+          sudo bash scripts/linux-usb/build-image.sh --deb "$DEB_FILE"
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cp /tmp/pos-usb/pos-usb.img.gz "/tmp/pos-usb/pos-usb-${VERSION}.img.gz"
+          gh release upload "$VERSION" \
+            "/tmp/pos-usb/pos-usb-${VERSION}.img.gz" \
+            --repo Chocksy/tapselo-pos \
+            --clobber
+          echo "Uploaded pos-usb-${VERSION}.img.gz to release $VERSION"
