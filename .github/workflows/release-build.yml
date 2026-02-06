@@ -6,6 +6,10 @@ on:
       version:
         description: 'Version to release (e.g., 0.5.20)'
         required: true
+      changelog:
+        description: 'Changelog entries (one per line, prefixed with -)'
+        required: false
+        default: '- Bug fixes and improvements'
 
 jobs:
   create-release:
@@ -27,17 +31,20 @@ jobs:
           body: |
             ## Tapselo POS v${{ github.event.inputs.version }}
 
-            Download the appropriate installer for your platform below.
+            ### What's Changed
+            ${{ github.event.inputs.changelog }}
+
+            ### Downloads
 
             | Platform | Download |
             |----------|----------|
             | Windows | `.msi` installer |
             | macOS Intel | `.dmg` for Intel Macs |
             | macOS Apple Silicon | `.dmg` for M1/M2/M3 Macs |
-            | Linux | `.AppImage` |
+            | Linux | `.AppImage` or `.deb` |
             | Linux USB | `.img.gz` bootable USB image |
 
-            The app will auto-update in the future.
+            The app auto-updates when connected to the internet.
           draft: true
           prerelease: false
 
