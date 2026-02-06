@@ -11,6 +11,9 @@ on:
         required: false
         default: '- Bug fixes and improvements'
 
+permissions:
+  contents: write
+
 jobs:
   create-release:
     runs-on: ubuntu-latest
@@ -25,6 +28,8 @@ jobs:
       - name: Create draft release
         id: create_release
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASES_PAT }}
         with:
           tag_name: v${{ github.event.inputs.version }}
           name: Tapselo POS v${{ github.event.inputs.version }}
@@ -141,7 +146,7 @@ jobs:
       - name: Build and release
         uses: tauri-apps/tauri-action@v0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASES_PAT }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           # Build-time environment variables (not secrets)
@@ -166,7 +171,7 @@ jobs:
     steps:
       - name: Publish release (remove draft status)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASES_PAT }}
         run: |
           gh release edit v${{ needs.create-release.outputs.version }} \
             --repo Chocksy/tapselo-pos \
