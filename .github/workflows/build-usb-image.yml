@@ -42,7 +42,7 @@ jobs:
 
       - name: Upload to release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASES_PAT }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           cp /tmp/pos-usb/pos-usb.img.gz "/tmp/pos-usb/pos-usb-${VERSION}.img.gz"
