@@ -46,8 +46,7 @@ jobs:
             | Windows | `.msi` installer |
             | macOS Intel | `.dmg` for Intel Macs |
             | macOS Apple Silicon | `.dmg` for M1/M2/M3 Macs |
-            | Linux x86_64 | `.AppImage` or `.deb` |
-            | Linux ARM64 (Raspberry Pi) | `.deb` for Pi 4/5 |
+            | Linux | `.AppImage` or `.deb` |
             | Linux USB | `.img.gz` bootable USB image |
 
             The app auto-updates when connected to the internet.
@@ -74,14 +73,10 @@ jobs:
           - platform: windows-latest
             args: ''
             target: x86_64-pc-windows-msvc
-          # Linux x86_64
+          # Linux
           - platform: ubuntu-22.04
             args: ''
             target: x86_64-unknown-linux-gnu
-          # Linux ARM64 (Raspberry Pi 4/5)
-          - platform: ubuntu-22.04-arm
-            args: ''
-            target: aarch64-unknown-linux-gnu
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -92,10 +87,10 @@ jobs:
           token: ${{ secrets.RELEASES_PAT }}
 
       - name: Install dependencies (Ubuntu only)
-        if: startsWith(matrix.platform, 'ubuntu')
+        if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libudev-dev xdg-utils
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libudev-dev
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -157,6 +152,7 @@ jobs:
           # Build-time environment variables (not secrets)
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          # PostHog analytics (session replay + error tracking)
           VITE_POSTHOG_KEY: ${{ vars.VITE_POSTHOG_KEY }}
           VITE_POSTHOG_HOST: ${{ vars.VITE_POSTHOG_HOST }}
           # Apple code signing and notarization (macOS only)
